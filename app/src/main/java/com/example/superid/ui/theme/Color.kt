@@ -1,4 +1,4 @@
-package com.example.fireauthtest.ui.theme
+package com.example.superid.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

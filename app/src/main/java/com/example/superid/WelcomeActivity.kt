@@ -1,4 +1,4 @@
-package com.example.fireauthtest
+package com.example.superid
 
 import android.content.Intent
 import android.os.Bundle

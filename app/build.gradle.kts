@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.fireauthtest"
+    namespace = "com.pi.superid"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.fireauthtest"
+        applicationId = "com.pi.superid"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -61,6 +61,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation("androidx.compose.material3:material3:1.3.2")
 
     implementation(platform("com.google.firebase:firebase-bom:33.12.0")) // Bill of Materials do Firebase (controle de versão)
     implementation("com.google.firebase:firebase-auth-ktx") // Firebase Auth

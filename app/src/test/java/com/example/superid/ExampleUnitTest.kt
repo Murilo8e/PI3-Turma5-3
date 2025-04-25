@@ -1,4 +1,4 @@
-package com.example.fireauthtest
+package com.example.superid
 
 import org.junit.Test
 
