@@ -1,6 +1,7 @@
 package com.example.fireauthtest
 
 import android.os.Bundle
+import android.util.Log
 import android.util.Patterns
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -58,9 +59,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 
 /*
+
+!!!  USANDO GOOGLE-SERVICES API DA MINHA CONTA FIREBASE.
+DEPOIS ALTERAR PARA O FIREBASE DO PROJETO!
 
 TO DO
     - Colocar as strings no formato XML e busca-las ao inves de inserir direto no codigo.
@@ -72,20 +79,15 @@ TO DO
 
 class SignUpActivity : ComponentActivity() {
 
-    private lateinit var auth: FirebaseAuth
+    lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        auth = FirebaseAuth.getInstance()
-
         enableEdgeToEdge()
         setContent {
             SignUpScreen()
         }
-
     }
-
 }
 
 
@@ -94,6 +96,8 @@ class SignUpActivity : ComponentActivity() {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SignUpScreen(modifier: Modifier = Modifier){
+
+    val auth = FirebaseAuth.getInstance()
 
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
@@ -174,7 +178,7 @@ fun SignUpScreen(modifier: Modifier = Modifier){
         secondPasswordError
     ).all { !it }
 
-    val enabledButton = allFieldsNotEmpty && noFieldErrors
+    var enabledButton = allFieldsNotEmpty && noFieldErrors
 
 
     Column(
@@ -337,7 +341,13 @@ fun SignUpScreen(modifier: Modifier = Modifier){
         Spacer(modifier = Modifier.height(30.dp))
 
         Button(
-            onClick = { TODO() },
+            onClick = {
+                createUserAccount(
+                    auth = auth,
+                    email = emailInput,
+                    password = firstPasswordInput
+                )
+            },
             enabled = enabledButton
         ){
             Text("Criar Conta")
@@ -620,10 +630,20 @@ fun emailValidation(input: String): Boolean{
     return error
 }
 
-
-
-//Criação do usuario no Firebase Auth
-fun createUserAuthentication(email: String, password:String){
-    TODO()
+private fun createUserAccount(auth: FirebaseAuth, email: String, password: String){
+    auth.createUserWithEmailAndPassword(email, password)
+        .addOnCompleteListener{ task: Task<AuthResult> ->
+            if(task.isSuccessful){
+                Log.d("SignUpActivity", "Usuário criado com sucesso!")
+                val user = auth.currentUser
+            }
+            else {
+                Log.w("SignUpActivity", "Criação de usúario falhou. Exception = ${task.exception?.message}")
+                if(task.exception is FirebaseAuthUserCollisionException){
+                    TODO()
+                }
+            }
+        }
 }
+
 
