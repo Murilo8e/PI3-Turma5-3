@@ -47,9 +47,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -71,10 +73,11 @@ DEPOIS ALTERAR PARA O FIREBASE DO PROJETO!
 
 TO DO
     - Colocar as strings no formato XML e busca-las ao inves de inserir direto no codigo.
+    - Exibir mensagens de formato errado de entradas
     - Sanitizacao das entradas de senha
     - Melhorar o posicionamento do card de requisitos de senha
     - Enviar cadastro ao firebase auth
-
+    - Criar dialog para o caso de colisao (email ja cadastrado...)
 */
 
 class SignUpActivity : ComponentActivity() {
@@ -295,47 +298,16 @@ fun SignUpScreen(modifier: Modifier = Modifier){
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedTextField(
+        SecondPasswordTextField(
             value = secondPasswordInput,
-            label = { Text("Confirmar Senha") },
-            singleLine = true,
-
             onValueChange = {
                 secondPasswordInput = it
-
-                if(secondPasswordInput.isNotEmpty()){
-                    if(!(firstPasswordInput == secondPasswordInput)){
-                        secondPasswordError = true
-                    }
-                }
+                secondPasswordError = passwordMatches(firstPasswordInput, it)
             },
-
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
-            ),
-            
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    focusManager.clearFocus()
-                    keyboardController?.hide()
-                }
-            ),
-
-            visualTransformation =  if (visiblePassword)
-                                        VisualTransformation.None
-                                    else
-                                        PasswordVisualTransformation(),
-
-
-
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Rounded.Password,
-                    contentDescription = "Ícone de senha"
-                )
-            }
-
+            visiblePassword = visiblePassword,
+            error = secondPasswordError,
+            focusManager = focusManager,
+            keyboardController = keyboardController
         )
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -596,8 +568,46 @@ fun FirstPasswordTextField(
 
 @Composable
 fun SecondPasswordTextField(
-
+    value: String,
+    onValueChange: (String) -> Unit,
+    visiblePassword: Boolean,
+    error: Boolean,
+    focusManager: FocusManager,
+    keyboardController: SoftwareKeyboardController?
 ){
+
+    OutlinedTextField(
+        value = value,
+        label = {Text("Confirmar Senha")},
+        singleLine = true,
+
+        onValueChange = onValueChange,
+
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        ),
+
+        keyboardActions = KeyboardActions(
+            onDone = {
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
+        ),
+
+        visualTransformation =  if (visiblePassword)
+            VisualTransformation.None
+        else
+            PasswordVisualTransformation(),
+
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Rounded.Password,
+                contentDescription = "Ícone de senha"
+            )
+        }
+    )
+
 
 }
 
@@ -626,6 +636,15 @@ fun emailValidation(input: String): Boolean{
     var error: Boolean
 
     error = !(Patterns.EMAIL_ADDRESS.matcher(input).matches())
+
+    return error
+}
+
+fun passwordMatches(firstPw: String, secondPw: String): Boolean{
+
+    var error: Boolean
+
+    error = (firstPw == secondPw)
 
     return error
 }
