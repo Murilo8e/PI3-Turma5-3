@@ -59,6 +59,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.gms.tasks.Task
@@ -86,9 +87,10 @@ class SignUpActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        auth = FirebaseAuth.getInstance()
         enableEdgeToEdge()
         setContent {
-            SignUpScreen()
+            SignUpScreen(auth = auth)
         }
     }
 }
@@ -98,7 +100,10 @@ class SignUpActivity : ComponentActivity() {
 @Preview
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SignUpScreen(modifier: Modifier = Modifier){
+fun SignUpScreen(
+    auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    modifier: Modifier = Modifier
+){
 
     val auth = FirebaseAuth.getInstance()
 
@@ -126,6 +131,9 @@ fun SignUpScreen(modifier: Modifier = Modifier){
     var firstPasswordError by remember { mutableStateOf(false) }
     var firstPasswordFieldTouched by remember { mutableStateOf(false) }
 
+    class TextFieldTouched{
+
+    }
 
     class PasswordValidationState{
         var validLength by mutableStateOf(false)
@@ -218,6 +226,11 @@ fun SignUpScreen(modifier: Modifier = Modifier){
                     firstNameError = firstNameValidation(it)
                 }
             },
+            modifier = Modifier
+                .onFocusChanged(){ FocusState ->
+
+
+                },
             focusManager = focusManager
         )
 
@@ -257,8 +270,6 @@ fun SignUpScreen(modifier: Modifier = Modifier){
                 pwHasSpecialChar = passwordValidation.hasSpecialChar
             )
         }
-
-
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -314,11 +325,7 @@ fun SignUpScreen(modifier: Modifier = Modifier){
 
         Button(
             onClick = {
-                createUserAccount(
-                    auth = auth,
-                    email = emailInput,
-                    password = firstPasswordInput
-                )
+
             },
             enabled = enabledButton
         ){
@@ -332,6 +339,7 @@ fun SignUpScreen(modifier: Modifier = Modifier){
 fun FirstNameTextField(
     value: String,
     onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
     error: Boolean,
     focusManager: FocusManager
 ){
@@ -341,6 +349,7 @@ fun FirstNameTextField(
         singleLine = true,
 
         onValueChange = onValueChange,
+        modifier = modifier,
 
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Text,
@@ -357,6 +366,12 @@ fun FirstNameTextField(
             Icon(
                 imageVector = Icons.Rounded.Person,
                 contentDescription = "Ícone de Pessoa"
+            )
+        },
+
+        supportingText = {
+            Text(
+                text = "Nome inválido!"
             )
         }
     )
@@ -649,7 +664,7 @@ fun passwordMatches(firstPw: String, secondPw: String): Boolean{
     return error
 }
 
-private fun createUserAccount(auth: FirebaseAuth, email: String, password: String){
+fun createUserAccount(auth: FirebaseAuth, email: String, password: String){
     auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener{ task: Task<AuthResult> ->
             if(task.isSuccessful){

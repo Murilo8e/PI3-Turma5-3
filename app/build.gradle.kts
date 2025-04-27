@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.fireauthtest"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.fireauthtest"
@@ -29,11 +29,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -62,7 +62,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(platform("com.google.firebase:firebase-bom:33.12.0")) // Bill of Materials do Firebase (controle de versão)
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0")) // Bill of Materials do Firebase (controle de versão)
     implementation("com.google.firebase:firebase-auth-ktx") // Firebase Auth
     implementation("com.google.firebase:firebase-analytics") //
 
