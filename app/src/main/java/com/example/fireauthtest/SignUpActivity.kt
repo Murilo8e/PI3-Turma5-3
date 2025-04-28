@@ -33,6 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -47,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -59,7 +59,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.gms.tasks.Task
@@ -73,10 +72,7 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 DEPOIS ALTERAR PARA O FIREBASE DO PROJETO!
 
 TO DO
-    - Colocar as strings no formato XML e busca-las ao inves de inserir direto no codigo.
-    - Exibir mensagens de formato errado de entradas
-    - Sanitizacao das entradas de senha
-    - Melhorar o posicionamento do card de requisitos de senha
+
     - Enviar cadastro ao firebase auth
     - Criar dialog para o caso de colisao (email ja cadastrado...)
 */
@@ -95,6 +91,34 @@ class SignUpActivity : ComponentActivity() {
     }
 }
 
+class FieldState(
+    /* Classe que serve para informar os campos de erro se um erro esta apto para ser
+    apresentado (displayable).
+    O erro so vai ser exibido apos o usuario ganhar o foco do campo e sair dele.
+     */
+
+    private val fieldError: () -> Boolean,
+    private val fieldIsNotEmpty: () -> Boolean
+)
+{
+
+    var wasTouched by mutableStateOf(false)
+    var displayableError by mutableStateOf(false)
+
+    val showError: Boolean
+        get() = fieldError() && fieldIsNotEmpty() && displayableError
+
+    fun onFocusChange(isFocused: Boolean) {
+        if (isFocused) {
+            wasTouched = true
+        } else {
+            if (wasTouched) {
+                displayableError = true
+            }
+        }
+    }
+}
+
 
 // Composable Pai
 @Preview
@@ -105,36 +129,6 @@ fun SignUpScreen(
     modifier: Modifier = Modifier
 ){
 
-    val auth = FirebaseAuth.getInstance()
-
-    val focusManager = LocalFocusManager.current
-    val scrollState = rememberScrollState()
-
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    val coroutineScope = rememberCoroutineScope()
-
-    var firstNameInput by remember { mutableStateOf("") }
-    var firstNameError by remember { mutableStateOf(false) }
-
-    var surnameInput by remember { mutableStateOf("") }
-    var surnameError by remember { mutableStateOf(false) }
-
-    var emailInput by remember { mutableStateOf("") }
-    var emailTextFieldTouched by remember { mutableStateOf(false) }
-    var emailError by remember { mutableStateOf(false) }
-
-    var showPasswordRequirements by remember { mutableStateOf(false) }
-
-    var firstPasswordInput by remember { mutableStateOf("") }
-    var firstPasswordError by remember { mutableStateOf(false) }
-    var firstPasswordFieldTouched by remember { mutableStateOf(false) }
-
-    class TextFieldTouched{
-
-    }
-
     class PasswordValidationState{
         var validLength by mutableStateOf(false)
         var hasUpperAndLowercase by mutableStateOf(false)
@@ -143,9 +137,9 @@ fun SignUpScreen(
 
         val passwordError : Boolean
             get() = !validLength
-                        || !hasUpperAndLowercase
-                            || !hasNumber
-                                || !hasSpecialChar
+                    || !hasUpperAndLowercase
+                    || !hasNumber
+                    || !hasSpecialChar
 
         fun validate(input: String){
 
@@ -162,6 +156,51 @@ fun SignUpScreen(
         }
     }
 
+
+    val auth = FirebaseAuth.getInstance()
+
+    val focusManager = LocalFocusManager.current
+    val scrollState = rememberScrollState()
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
+
+    var firstNameInput by remember { mutableStateOf("") }
+    var firstNameError by remember { mutableStateOf(true) }
+    val FirstNameFieldState =
+        remember {
+            FieldState(
+                { firstNameError },
+                { firstNameInput.isNotEmpty() }
+        )
+    }
+
+    var surnameInput by remember { mutableStateOf("") }
+    var surnameError by remember { mutableStateOf(false) }
+    val SurnameFieldState =
+        remember {
+            FieldState(
+                { surnameError },
+                { surnameInput.isNotEmpty() }
+            )
+        }
+
+    var emailInput by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf(false) }
+    val EmailFieldState =
+        remember {
+            FieldState(
+                { emailError },
+                { emailInput.isNotEmpty() }
+            )
+        }
+
+    var showPasswordRequirements by remember { mutableStateOf(false) }
+
+    var firstPasswordInput by remember { mutableStateOf("") }
+    var firstPasswordError by remember { mutableStateOf(false) }
     val passwordValidation = remember { PasswordValidationState() }
 
     var secondPasswordInput by remember { mutableStateOf("") }
@@ -223,15 +262,24 @@ fun SignUpScreen(
             onValueChange = {
                 if (it.length <= 30){
                     firstNameInput = it
-                    firstNameError = firstNameValidation(it)
+                    firstNameError = !NameFormatValidation(it, 2, 30)
+                    Log.d("firstNameError value", "${firstNameError}")
                 }
             },
             modifier = Modifier
                 .onFocusChanged(){ FocusState ->
-
-
+                    if (FocusState.isFocused){
+                        FirstNameFieldState.onFocusChange(isFocused = true)
+                        Log.d("firstNameFieldState was touched?", "${ FirstNameFieldState.wasTouched }")
+                    }
+                    else{
+                        FirstNameFieldState.onFocusChange(isFocused = false)
+                        Log.d("firstNameFieldState displayableError?", "${ FirstNameFieldState.displayableError}")
+                        Log.d("firstNameFieldState showError?", "${ FirstNameFieldState.showError} ")
+                    }
                 },
-            focusManager = focusManager
+            focusManager = focusManager,
+            fieldState = FirstNameFieldState
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -242,11 +290,25 @@ fun SignUpScreen(
             onValueChange = {
                 if(it.length <= 50){
                     surnameInput = it
-                    surnameError = surnameValidation(it)
+                    surnameError = !NameFormatValidation(it, 2, 50)
+                    Log.d("surnameError value", "${surnameError}")
                 }
             },
+            modifier = Modifier
+                .onFocusChanged(){ FocusState ->
+                    if (FocusState.isFocused){
+                        SurnameFieldState.onFocusChange(isFocused = true)
+                        Log.d("firstNameFieldState was touched?", "${ SurnameFieldState.wasTouched }")
+                    }
+                    else{
+                        SurnameFieldState.onFocusChange(isFocused = false)
+                        Log.d("firstNameFieldState displayableError?", "${ SurnameFieldState.displayableError}")
+                        Log.d("firstNameFieldState showError?", "${ SurnameFieldState.showError} ")
+                    }
+                },
             error = surnameError,
-            focusManager = focusManager
+            focusManager = focusManager,
+            fieldState = SurnameFieldState
         )
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -256,10 +318,20 @@ fun SignUpScreen(
             value = emailInput,
             onValueChange = {
                 emailInput = it
-                emailError = emailValidation(it)
+                emailError = EmailFormatValidation(it)
             },
+            modifier = Modifier
+                .onFocusChanged() { FocusState ->
+                    if (FocusState.isFocused){
+                        EmailFieldState.onFocusChange(isFocused = true)
+                    }
+                    else{
+                        EmailFieldState.onFocusChange(isFocused = false)
+                    }
+                },
             error = emailError,
-            focusManager = focusManager
+            focusManager = focusManager,
+            fieldState = EmailFieldState
         )
 
         AnimatedVisibility(showPasswordRequirements){
@@ -340,6 +412,7 @@ fun FirstNameTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    fieldState: FieldState,
     error: Boolean,
     focusManager: FocusManager
 ){
@@ -370,9 +443,12 @@ fun FirstNameTextField(
         },
 
         supportingText = {
-            Text(
-                text = "Nome inválido!"
-            )
+            if(fieldState.showError){
+                Text(
+                    text = "Formato de nome inválido!",
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     )
 }
@@ -381,6 +457,8 @@ fun FirstNameTextField(
 fun SurnameTextField(
     value : String,
     onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    fieldState: FieldState,
     error: Boolean,
     focusManager: FocusManager
 ){
@@ -390,6 +468,7 @@ fun SurnameTextField(
         singleLine = true,
 
         onValueChange = onValueChange,
+        modifier = modifier,
 
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Text,
@@ -400,7 +479,15 @@ fun SurnameTextField(
             onNext = {
                 focusManager.moveFocus(FocusDirection.Down)
             }
-        )
+        ),
+
+        supportingText = {
+            if(fieldState.showError){
+                Text(
+                    text = "Formato de Sobrenome Inválido!",
+                    color = MaterialTheme.colorScheme.error)
+            }
+        }
     )
 }
 
@@ -408,6 +495,8 @@ fun SurnameTextField(
 fun EmailTextField(
     value: String,
     onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    fieldState: FieldState,
     error: Boolean,
     focusManager: FocusManager
 ){
@@ -436,6 +525,15 @@ fun EmailTextField(
                 imageVector = Icons.Rounded.Email,
                 contentDescription = "Ícone de Email"
             )
+        },
+
+        supportingText = {
+            if(fieldState.showError){
+                Text(
+                    text = "Formato de Email Inválido!",
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     )
 }
@@ -631,31 +729,22 @@ Funções de validação de entrada dos campos de texto
 Lembrando que o primeiro campo de senha é validado pelo metodo da classe passwordValidation
 */
 
-fun firstNameValidation(input: String): Boolean{
-    var error: Boolean
+fun NameFormatValidation(
+    input: String,
+    minLength : Int,
+    maxLength : Int) : Boolean {
 
-    error = input.length in 2..30 || input.matches(Regex(".*[^a-zA-ZÀ-ÿ\\-].*"))
+    fun isValidLength(input: String) = input.length in minLength..maxLength
+    fun hasOnlyValidChars(input: String) = !input.contains(Regex("[^a-zA-ZÀ-ÿ -]"))
 
-    return error
+    return isValidLength(input) && hasOnlyValidChars(input)
 }
 
-fun surnameValidation(input: String): Boolean{
-    var error: Boolean
-
-    error = input.length in 2..50 || input.matches(Regex(".*[^a-zA-ZÀ-ÿ\\-].*"))
-
-    return error
+fun EmailFormatValidation(input: String) : Boolean{
+    return Patterns.EMAIL_ADDRESS.matcher(input).matches()
 }
 
-fun emailValidation(input: String): Boolean{
-    var error: Boolean
-
-    error = !(Patterns.EMAIL_ADDRESS.matcher(input).matches())
-
-    return error
-}
-
-fun passwordMatches(firstPw: String, secondPw: String): Boolean{
+fun passwordMatches(firstPw: String, secondPw: String): Boolean {
 
     var error: Boolean
 
