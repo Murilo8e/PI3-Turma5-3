@@ -1,5 +1,7 @@
 package com.example.fireauthtest
 
+import android.R.attr.fontWeight
+import android.R.attr.password
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
@@ -8,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -30,6 +34,7 @@ import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,12 +57,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,9 +82,12 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 DEPOIS ALTERAR PARA O FIREBASE DO PROJETO!
 
 TO DO
-
-    - Enviar cadastro ao firebase auth
+    - Adicionar uma seta ao topo para retornar ao WelcomeScreen
+    - Tornar o checkbox dos termos de uso obrigatorio
+    - Encapsular a função de criar usuario (talvez?)
+    - Criar fullscreen dialog para exibir os termos de uso
     - Criar dialog para o caso de colisao (email ja cadastrado...)
+    - Adicionar tema/elementos de UI do app
 */
 
 class SignUpActivity : ComponentActivity() {
@@ -212,6 +225,8 @@ fun SignUpScreen(
                             else
                                 Icons.Rounded.Visibility
 
+    var termsOfUseIsChecked by remember { mutableStateOf(false) }
+
     val allFieldsNotEmpty : Boolean = listOf(
         firstNameInput,
         surnameInput,
@@ -318,7 +333,8 @@ fun SignUpScreen(
             value = emailInput,
             onValueChange = {
                 emailInput = it
-                emailError = EmailFormatValidation(it)
+                emailError = !EmailFormatValidation(it)
+                Log.d("emailError value", "${emailError}")
             },
             modifier = Modifier
                 .onFocusChanged() { FocusState ->
@@ -355,6 +371,7 @@ fun SignUpScreen(
                     firstPasswordInput = it
                     passwordValidation.validate(it)
                     firstPasswordError = passwordValidation.passwordError
+                    Log.d("firstPasswordError value", "${firstPasswordError}")
                 }
             },
 
@@ -385,7 +402,8 @@ fun SignUpScreen(
             value = secondPasswordInput,
             onValueChange = {
                 secondPasswordInput = it
-                secondPasswordError = passwordMatches(firstPasswordInput, it)
+                secondPasswordError = !passwordMatches(firstPasswordInput, it)
+                Log.d("secondPasswordError value", "${secondPasswordError}")
             },
             visiblePassword = visiblePassword,
             error = secondPasswordError,
@@ -393,11 +411,56 @@ fun SignUpScreen(
             keyboardController = keyboardController
         )
 
+        Spacer(modifier = Modifier.height(15.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = termsOfUseIsChecked,
+                onCheckedChange = { termsOfUseIsChecked = it}
+            )
+
+            Row(
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = "Li e Aceito os"
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(
+                    text = "Termos de Uso",
+                    color = Color.Blue,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier
+                        .clickable{
+                            TODO()
+                        }
+                )
+            }
+        }
+
+
         Spacer(modifier = Modifier.height(30.dp))
 
         Button(
             onClick = {
-
+                auth.createUserWithEmailAndPassword(emailInput, firstPasswordInput)
+                    .addOnCompleteListener{ task: Task<AuthResult> ->
+                        if(task.isSuccessful){
+                            Log.d("SignUpActivity", "Usuário criado com sucesso!")
+                            val user = auth.currentUser
+                        }
+                        else {
+                            Log.w("SignUpActivity", "Criação de usúario falhou. Exception = ${task.exception?.message}")
+                            if(task.exception is FirebaseAuthUserCollisionException){
+                                TODO()
+                            }
+                        }
+                    }
             },
             enabled = enabledButton
         ){
@@ -746,27 +809,11 @@ fun EmailFormatValidation(input: String) : Boolean{
 
 fun passwordMatches(firstPw: String, secondPw: String): Boolean {
 
-    var error: Boolean
-
-    error = (firstPw == secondPw)
-
-    return error
+    return (firstPw == secondPw)
 }
 
 fun createUserAccount(auth: FirebaseAuth, email: String, password: String){
-    auth.createUserWithEmailAndPassword(email, password)
-        .addOnCompleteListener{ task: Task<AuthResult> ->
-            if(task.isSuccessful){
-                Log.d("SignUpActivity", "Usuário criado com sucesso!")
-                val user = auth.currentUser
-            }
-            else {
-                Log.w("SignUpActivity", "Criação de usúario falhou. Exception = ${task.exception?.message}")
-                if(task.exception is FirebaseAuthUserCollisionException){
-                    TODO()
-                }
-            }
-        }
+    TODO()
 }
 
 
