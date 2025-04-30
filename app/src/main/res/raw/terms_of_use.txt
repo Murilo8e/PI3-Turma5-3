@@ -1,0 +1,46 @@
+Termos de Uso – SuperID
+Última atualização: 30 de abril de 2025
+
+Bem-vindo ao SuperID, um aplicativo de autenticação que permite realizar login com segurança em diferentes plataformas por meio de QR Code.
+
+Ao utilizar o SuperID, você concorda com os seguintes Termos de Uso. Recomendamos a leitura atenta deste documento antes de continuar a utilizar o aplicativo.
+
+1. Aceitação dos Termos
+Ao instalar, acessar ou usar o SuperID, você declara estar ciente e de acordo com os presentes Termos de Uso. Caso não concorde com alguma condição aqui prevista, por favor, não utilize o aplicativo.
+
+2. Finalidade do Aplicativo
+O SuperID tem como objetivo fornecer um meio seguro, rápido e prático de autenticação e login em serviços compatíveis, utilizando QR Code como mecanismo principal de verificação de identidade.
+
+3. Cadastro e Responsabilidade do Usuário
+Para utilizar o SuperID, é necessário criar uma conta com informações verídicas e atualizadas. O usuário é o único responsável pela guarda de suas credenciais e pelo uso que faz do aplicativo.
+
+Não é permitido:
+
+Utilizar o aplicativo com fins ilícitos ou não autorizados;
+
+Compartilhar acesso com terceiros de forma indevida;
+
+Violar sistemas de segurança das plataformas integradas ao SuperID.
+
+4. Coleta e Uso de Dados
+O SuperID coleta informações básicas como nome, e-mail e identificadores do dispositivo para fins de autenticação e melhoria da experiência do usuário.
+
+Todos os dados são tratados conforme as diretrizes da Lei Geral de Proteção de Dados (LGPD), e não são compartilhados com terceiros sem o seu consentimento.
+
+5. Segurança
+O SuperID utiliza tecnologias de criptografia e protocolos modernos para proteger suas informações. Ainda assim, nenhuma tecnologia é 100% infalível. Ao usar o aplicativo, você reconhece que há riscos inerentes à transmissão de dados online.
+
+6. Atualizações
+Estes Termos podem ser alterados a qualquer momento para refletir mudanças legais, técnicas ou operacionais. Você será notificado sobre alterações relevantes. O uso contínuo do SuperID após tais alterações constitui aceitação dos novos termos.
+
+7. Cancelamento e Encerramento de Conta
+O usuário pode, a qualquer momento, solicitar a exclusão de sua conta através das configurações do aplicativo. A exclusão é irreversível e resultará no fim do acesso ao serviço.
+
+8. Limitação de Responsabilidade
+O SuperID não se responsabiliza por falhas decorrentes do uso indevido do aplicativo, interrupções nos serviços de terceiros, ou quaisquer danos diretos ou indiretos resultantes do uso da plataforma.
+
+9. Contato
+Em caso de dúvidas, sugestões ou solicitações relacionadas a estes Termos de Uso, entre em contato conosco pelo e-mail: suporte@superid.app
+
+Ao clicar em "Aceito", você confirma que leu, compreendeu e concorda com os Termos de Uso acima.
+

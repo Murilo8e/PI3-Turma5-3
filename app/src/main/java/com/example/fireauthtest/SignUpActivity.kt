@@ -1,7 +1,10 @@
 package com.example.fireauthtest
 
 import android.R.attr.fontWeight
+import android.R.attr.onClick
 import android.R.attr.password
+import android.app.Dialog
+import android.content.ClipData
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
@@ -10,8 +13,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,12 +27,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsEndWidth
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Password
 import androidx.compose.material.icons.rounded.Person
@@ -52,8 +63,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -71,10 +86,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import org.intellij.lang.annotations.JdkConstants
 
 /*
 
@@ -83,10 +100,11 @@ DEPOIS ALTERAR PARA O FIREBASE DO PROJETO!
 
 TO DO
     - Adicionar uma seta ao topo para retornar ao WelcomeScreen
-    - Tornar o checkbox dos termos de uso obrigatorio
+    - Criar warning dialogs
+        - Usuario Criado
+        - Email ja em uso (collision)
+        - Falha ao criar usuario
     - Encapsular a função de criar usuario (talvez?)
-    - Criar fullscreen dialog para exibir os termos de uso
-    - Criar dialog para o caso de colisao (email ja cadastrado...)
     - Adicionar tema/elementos de UI do app
 */
 
@@ -169,7 +187,6 @@ fun SignUpScreen(
         }
     }
 
-
     val auth = FirebaseAuth.getInstance()
 
     val focusManager = LocalFocusManager.current
@@ -225,6 +242,7 @@ fun SignUpScreen(
                             else
                                 Icons.Rounded.Visibility
 
+    var showTermsOfUse by remember { mutableStateOf(false) }
     var termsOfUseIsChecked by remember { mutableStateOf(false) }
 
     val allFieldsNotEmpty : Boolean = listOf(
@@ -240,7 +258,8 @@ fun SignUpScreen(
         surnameError,
         emailError,
         firstPasswordError,
-        secondPasswordError
+        secondPasswordError,
+        !termsOfUseIsChecked
     ).all { !it }
 
     var enabledButton = allFieldsNotEmpty && noFieldErrors
@@ -437,10 +456,16 @@ fun SignUpScreen(
                     textDecoration = TextDecoration.Underline,
                     modifier = Modifier
                         .clickable{
-                            TODO()
+                            showTermsOfUse = true
                         }
                 )
             }
+        }
+
+        if(showTermsOfUse){
+            TermsOfUseDialog(
+                onDissmissRequest = { showTermsOfUse = false }
+            )
         }
 
 
@@ -785,6 +810,131 @@ fun SecondPasswordTextField(
     )
 
 
+}
+
+@Composable
+fun TermsOfUseDialog(
+    onDissmissRequest : () -> Unit
+) {
+
+    val context = LocalContext.current
+    val termsOfUseText = remember {
+        context.resources.openRawResource(R.raw.terms_of_use)
+            .bufferedReader().use { it.readText() }
+    }
+
+    Dialog(
+        onDismissRequest = { onDissmissRequest() }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.LightGray),
+        ){
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier
+                        .weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ){
+                    Text(
+                        text = "Termos de Uso",
+                        style = MaterialTheme.typography.headlineLarge,
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(10f)
+                        .padding(16.dp)
+                        .border(1.dp, Color.DarkGray, RectangleShape)
+                        .background(Color.White)
+                        .padding(16.dp)
+                ){
+
+                    val scrollState = rememberScrollState()
+
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(scrollState)
+                    ) {
+                        Text(text = termsOfUseText)
+                    }
+
+                    if(scrollState.canScrollForward){
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf
+                                            (Color.Transparent,
+                                            Color.White)
+                                    )
+                                )
+                                .align(Alignment.BottomCenter),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Mais conteúdo abaixo",
+                                tint = Color.DarkGray
+                            )
+                        }
+                    }
+
+                    if(scrollState.canScrollBackward){
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            Color.Transparent)
+                                    )
+                                )
+                                .align(Alignment.TopCenter),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowUp,
+                                contentDescription = "Mais conteúdo acima",
+                                tint = Color.DarkGray
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ){
+                    Button(
+                        onClick = onDissmissRequest
+                    ) {
+                        Text("Voltar")
+                    }
+                }
+            }
+        }
+
+
+    }
 }
 
 /*
