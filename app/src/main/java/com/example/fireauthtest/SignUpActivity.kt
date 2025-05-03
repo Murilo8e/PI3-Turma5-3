@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Email
@@ -956,6 +957,35 @@ fun TermsOfUseDialog(
     }
 }
 
+@Composable
+fun AccountCreatedDialog(
+    onDissmissRequest: () -> Unit
+){
+    Dialog(
+        onDismissRequest = {}
+    ) {
+        Box(
+            modifier = Modifier
+                .size(300.dp)
+                .padding(10.dp)
+        ){
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ){
+                Icon(
+                    imageVector = Icons.Default.CheckCircleOutline,
+                    contentDescription = "Ícone de Sucesso",
+                    tint = Color.Green,
+                    modifier = Modifier.size(46.dp)
+                )
+
+
+            }
+
+        }
+    }
+}
 
 @Composable
 fun AccountCollisionDialog(){
