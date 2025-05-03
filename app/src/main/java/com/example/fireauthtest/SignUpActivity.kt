@@ -1,10 +1,5 @@
 package com.example.fireauthtest
 
-import android.R.attr.fontWeight
-import android.R.attr.onClick
-import android.R.attr.password
-import android.app.Dialog
-import android.content.ClipData
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
@@ -27,11 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsEndWidth
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -91,7 +83,8 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import org.intellij.lang.annotations.JdkConstants
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 /*
 
@@ -111,14 +104,19 @@ TO DO
 class SignUpActivity : ComponentActivity() {
 
     lateinit var auth: FirebaseAuth
+    lateinit var db : FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        auth = FirebaseAuth.getInstance()
+
         enableEdgeToEdge()
         setContent {
-            SignUpScreen(auth = auth)
+            SignUpScreen()
         }
+
+        auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
+
     }
 }
 
@@ -156,8 +154,7 @@ class FieldState(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SignUpScreen(
-    auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    modifier: Modifier = Modifier
+    modifier : Modifier = Modifier
 ){
 
     class PasswordValidationState{
@@ -188,6 +185,7 @@ fun SignUpScreen(
     }
 
     val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
 
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
@@ -472,22 +470,43 @@ fun SignUpScreen(
         Spacer(modifier = Modifier.height(30.dp))
 
         Button(
+            enabled = enabledButton,
             onClick = {
                 auth.createUserWithEmailAndPassword(emailInput, firstPasswordInput)
                     .addOnCompleteListener{ task: Task<AuthResult> ->
                         if(task.isSuccessful){
                             Log.d("SignUpActivity", "Usuário criado com sucesso!")
                             val user = auth.currentUser
+                            val userUid = user?.uid ?: return@addOnCompleteListener
+
+                            val userData = hashMapOf(
+                                "firstName" to firstNameInput,
+                                "surname" to surnameInput,
+                                "deviceId" to ""
+                            )
+
+                            db.collection("users")   // Acessa a colecao users
+                                .document(userUid)  // Gera o documento cujo Id é o userId
+                                .set(userData)      // Atribui os dados do documento conforme o HashMap
+                                .addOnSuccessListener { // O listener de Firestore nao retorna um objeto do tipo Task como em Auth
+                                    Log.d("SignUpActivity", "Firestore user doc created sucessfully")
+                                    // Exibir AlertDialog de usuario criado
+                                    // Mudar depois para redirecionar a activity de verificar email.
+                                }
+                                .addOnFailureListener {
+                                    Log.d("SignUpActivity", "Firestore user doc creation failed")
+                                    // Exibir AlertDialog de erro
+                                }
+
                         }
                         else {
                             Log.w("SignUpActivity", "Criação de usúario falhou. Exception = ${task.exception?.message}")
                             if(task.exception is FirebaseAuthUserCollisionException){
-                                TODO()
+                                TODO() // Exibir Alert Dialog de Colission
                             }
                         }
                     }
-            },
-            enabled = enabledButton
+            }
         ){
             Text("Criar Conta")
         }
@@ -936,6 +955,14 @@ fun TermsOfUseDialog(
 
     }
 }
+
+
+@Composable
+fun AccountCollisionDialog(){
+
+}
+
+
 
 /*
 Funções de validação de entrada dos campos de texto

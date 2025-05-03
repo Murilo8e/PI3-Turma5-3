@@ -64,9 +64,10 @@ dependencies {
 
     implementation(platform("com.google.firebase:firebase-bom:33.13.0")) // Bill of Materials do Firebase (controle de versão)
     implementation("com.google.firebase:firebase-auth-ktx") // Firebase Auth
-    implementation("com.google.firebase:firebase-analytics") //
+    implementation("com.google.firebase:firebase-firestore-ktx") // Firebase Firestore
+    implementation("com.google.firebase:firebase-analytics") // Analytics
 
 
-    implementation("androidx.compose.material:material-icons-extended") // Materials Icons
+    implementation("androidx.compose.material:material-icons-extended") // Material Icons
 
 }
