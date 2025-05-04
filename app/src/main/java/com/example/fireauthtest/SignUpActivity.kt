@@ -1,5 +1,7 @@
 package com.example.fireauthtest
 
+import android.app.ProgressDialog.show
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
@@ -24,11 +26,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircleOutline
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Email
@@ -39,6 +42,7 @@ import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,7 +60,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -65,9 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -75,7 +76,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -185,6 +185,7 @@ fun SignUpScreen(
         }
     }
 
+    // Objetos Firebase
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
@@ -196,6 +197,8 @@ fun SignUpScreen(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
 
+
+    // Variaveis de input dos campos de texto
     var firstNameInput by remember { mutableStateOf("") }
     var firstNameError by remember { mutableStateOf(true) }
     val FirstNameFieldState =
@@ -241,8 +244,13 @@ fun SignUpScreen(
                             else
                                 Icons.Rounded.Visibility
 
-    var showTermsOfUse by remember { mutableStateOf(false) }
+
+    // Variaveis de controle de dialogs (avisos)
+
     var termsOfUseIsChecked by remember { mutableStateOf(false) }
+    var showTermsOfUseDialog by remember { mutableStateOf(false) }
+    var showAccountCreatedDialog by remember { mutableStateOf(false) }
+
 
     val allFieldsNotEmpty : Boolean = listOf(
         firstNameInput,
@@ -455,24 +463,31 @@ fun SignUpScreen(
                     textDecoration = TextDecoration.Underline,
                     modifier = Modifier
                         .clickable{
-                            showTermsOfUse = true
+                            showTermsOfUseDialog = true
                         }
                 )
             }
         }
 
-        if(showTermsOfUse){
+        if(showTermsOfUseDialog){
             TermsOfUseDialog(
-                onDissmissRequest = { showTermsOfUse = false }
+                onDissmissRequest = { showTermsOfUseDialog = false }
             )
         }
 
+        if(showAccountCreatedDialog){
+            AccountCreatedDialog(
+                onDissmissRequest = {}
+            )
+        }
 
         Spacer(modifier = Modifier.height(30.dp))
 
         Button(
             enabled = enabledButton,
             onClick = {
+                // Criar uma funcao pra isso aq...
+
                 auth.createUserWithEmailAndPassword(emailInput, firstPasswordInput)
                     .addOnCompleteListener{ task: Task<AuthResult> ->
                         if(task.isSuccessful){
@@ -492,6 +507,7 @@ fun SignUpScreen(
                                 .addOnSuccessListener { // O listener de Firestore nao retorna um objeto do tipo Task como em Auth
                                     Log.d("SignUpActivity", "Firestore user doc created sucessfully")
                                     // Exibir AlertDialog de usuario criado
+                                    showAccountCreatedDialog = true
                                     // Mudar depois para redirecionar a activity de verificar email.
                                 }
                                 .addOnFailureListener {
@@ -510,6 +526,10 @@ fun SignUpScreen(
             }
         ){
             Text("Criar Conta")
+
+            if(showProgressIndicator){
+                CircularProgressIndicator()
+            }
         }
     }
 }
@@ -958,31 +978,59 @@ fun TermsOfUseDialog(
 }
 
 @Composable
+fun CreateAccountButton(
+
+){
+
+}
+
+@Composable
 fun AccountCreatedDialog(
     onDissmissRequest: () -> Unit
 ){
+    val context = LocalContext.current
+
     Dialog(
         onDismissRequest = {}
     ) {
+
         Box(
             modifier = Modifier
-                .size(300.dp)
-                .padding(10.dp)
+                .background(Color.White, RoundedCornerShape(16.dp))
+                .size(275.dp)
+                .padding(26.dp)
         ){
             Column(
+                modifier = Modifier
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.SpaceEvenly
             ){
                 Icon(
-                    imageVector = Icons.Default.CheckCircleOutline,
+                    imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Ícone de Sucesso",
                     tint = Color.Green,
-                    modifier = Modifier.size(46.dp)
+                    modifier = Modifier
+                        .size(60.dp)
                 )
 
+                Text(
+                    text = "Conta criada com sucesso!",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                )
 
+                Button(
+                    onClick = {
+                        val intent = Intent(context, SignInActivity::class.java)
+                        context.startActivity(intent)
+                    },
+                ){
+                    Text("Fazer Login")
+                }
             }
-
         }
     }
 }
