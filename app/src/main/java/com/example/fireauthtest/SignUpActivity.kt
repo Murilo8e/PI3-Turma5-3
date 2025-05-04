@@ -1,6 +1,5 @@
 package com.example.fireauthtest
 
-import android.app.ProgressDialog.show
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -51,6 +50,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -249,7 +249,7 @@ fun SignUpScreen(
 
     var termsOfUseIsChecked by remember { mutableStateOf(false) }
     var showTermsOfUseDialog by remember { mutableStateOf(false) }
-    var showAccountCreatedDialog by remember { mutableStateOf(false) }
+    var showAccountCreatedDialog = remember { mutableStateOf(false) }
 
 
     val allFieldsNotEmpty : Boolean = listOf(
@@ -475,7 +475,7 @@ fun SignUpScreen(
             )
         }
 
-        if(showAccountCreatedDialog){
+        if(showAccountCreatedDialog.value){
             AccountCreatedDialog(
                 onDissmissRequest = {}
             )
@@ -483,54 +483,16 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        Button(
-            enabled = enabledButton,
-            onClick = {
-                // Criar uma funcao pra isso aq...
-
-                auth.createUserWithEmailAndPassword(emailInput, firstPasswordInput)
-                    .addOnCompleteListener{ task: Task<AuthResult> ->
-                        if(task.isSuccessful){
-                            Log.d("SignUpActivity", "Usuário criado com sucesso!")
-                            val user = auth.currentUser
-                            val userUid = user?.uid ?: return@addOnCompleteListener
-
-                            val userData = hashMapOf(
-                                "firstName" to firstNameInput,
-                                "surname" to surnameInput,
-                                "deviceId" to ""
-                            )
-
-                            db.collection("users")   // Acessa a colecao users
-                                .document(userUid)  // Gera o documento cujo Id é o userId
-                                .set(userData)      // Atribui os dados do documento conforme o HashMap
-                                .addOnSuccessListener { // O listener de Firestore nao retorna um objeto do tipo Task como em Auth
-                                    Log.d("SignUpActivity", "Firestore user doc created sucessfully")
-                                    // Exibir AlertDialog de usuario criado
-                                    showAccountCreatedDialog = true
-                                    // Mudar depois para redirecionar a activity de verificar email.
-                                }
-                                .addOnFailureListener {
-                                    Log.d("SignUpActivity", "Firestore user doc creation failed")
-                                    // Exibir AlertDialog de erro
-                                }
-
-                        }
-                        else {
-                            Log.w("SignUpActivity", "Criação de usúario falhou. Exception = ${task.exception?.message}")
-                            if(task.exception is FirebaseAuthUserCollisionException){
-                                TODO() // Exibir Alert Dialog de Colission
-                            }
-                        }
-                    }
-            }
-        ){
-            Text("Criar Conta")
-
-            if(showProgressIndicator){
-                CircularProgressIndicator()
-            }
-        }
+        CreateAccountButton(
+            enabledButton = enabledButton,
+            showAccountCreatedDialog = showAccountCreatedDialog,
+            auth = auth,
+            db = db,
+            firstName = firstNameInput,
+            surname = surnameInput,
+            email = emailInput,
+            password = firstPasswordInput
+        )
     }
 }
 
@@ -979,9 +941,74 @@ fun TermsOfUseDialog(
 
 @Composable
 fun CreateAccountButton(
+    enabledButton : Boolean,
+    showAccountCreatedDialog : MutableState<Boolean>,
+    auth : FirebaseAuth,
+    db : FirebaseFirestore,
+    firstName : String,
+    surname : String,
+    email : String,
+    password : String,
 
-){
+    ){
+    var showProgressIndicator by remember { mutableStateOf(false) }
 
+    Button(
+        enabled = enabledButton,
+        onClick = {
+            // Criar uma funcao pra isso aq...
+
+            showProgressIndicator = true
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener{ task: Task<AuthResult> ->
+                    if(task.isSuccessful){
+                        Log.d("SignUpActivity", "Usuário criado com sucesso!")
+                        val user = auth.currentUser
+                        val userUid = user?.uid ?: return@addOnCompleteListener
+
+                        val userData = hashMapOf(
+                            "firstName" to firstName,
+                            "surname" to surname,
+                            "deviceId" to ""
+                        )
+
+                        db.collection("users")   // Acessa a colecao users
+                            .document(userUid)  // Gera o documento cujo Id é o userId
+                            .set(userData)      // Atribui os dados do documento conforme o HashMap
+                            .addOnSuccessListener { // O listener de Firestore nao retorna um objeto do tipo Task como em Auth
+                                Log.d("SignUpActivity", "Firestore user doc created sucessfully")
+                                // Exibir AlertDialog de usuario criado
+                                showAccountCreatedDialog.value = true
+                                // Mudar depois para redirecionar a activity de verificar email.
+                            }
+                            .addOnFailureListener {
+                                Log.d("SignUpActivity", "Firestore user doc creation failed")
+                                // Exibir AlertDialog de erro
+                            }
+
+                    }
+                    else {
+                        Log.w("SignUpActivity", "Criação de usúario falhou. Exception = ${task.exception?.message}")
+                        if(task.exception is FirebaseAuthUserCollisionException){
+                            TODO() // Exibir Alert Dialog de Colission
+                        }
+                    }
+                }
+        }
+    ){
+
+        if(showProgressIndicator){
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier
+                    .size(20.dp)
+            )
+        }
+        else{
+            Text("Criar Conta")
+        }
+    }
 }
 
 @Composable
