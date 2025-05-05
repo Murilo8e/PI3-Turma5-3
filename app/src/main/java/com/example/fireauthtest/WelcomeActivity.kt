@@ -1,5 +1,6 @@
 package com.example.fireauthtest
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -100,6 +101,7 @@ fun SplashScreen(){
 @Composable
 fun MainContent(){
 
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -159,7 +161,10 @@ fun MainContent(){
                 Spacer(modifier = Modifier.height(5.dp))
 
                 Button(
-                    onClick = {},
+                    onClick = {
+                        val intent = Intent(context, SignUpActivity::class.java)
+                        context.startActivity(intent)
+                    },
                     modifier = Modifier
                         .width(180.dp)
                         .height(50.dp),
@@ -177,7 +182,10 @@ fun MainContent(){
                 Spacer(modifier = Modifier.height(5.dp))
 
                 Button(
-                    onClick = {},
+                    onClick = {
+                        val intent = Intent(context, SignInActivity::class.java)
+                        context.startActivity(intent)
+                    },
                     modifier = Modifier
                         .width(180.dp)
                         .height(50.dp),
