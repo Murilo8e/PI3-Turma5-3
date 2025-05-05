@@ -62,7 +62,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(platform("com.google.firebase:firebase-bom:33.13.0")) // Bill of Materials do Firebase (controle de versÃ£o)
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0")) // Bill of Materials do Firebase (controle de versão)
     implementation("com.google.firebase:firebase-auth-ktx") // Firebase Auth
     implementation("com.google.firebase:firebase-firestore-ktx") // Firebase Firestore
     implementation("com.google.firebase:firebase-analytics") // Analytics
