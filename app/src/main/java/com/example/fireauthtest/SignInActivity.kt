@@ -2,6 +2,7 @@ package com.example.fireauthtest
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +26,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,25 +41,59 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
 
 
 class SignInActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        val auth = FirebaseAuth.getInstance()
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            signInScreen()
+            signInScreen(
+                auth = auth
+            )
         }
     }
 }
 
-@Preview(showBackground = true)
+class LoginTextFieldController(
+    val email : MutableState<String>,
+    val senha : MutableState<String>
+){
+
+    var emailValue : String
+        get() = email.value
+        set(value) { email.value = value }
+
+    var senhaValue : String
+        get() = senha.value
+        set(value) { senha.value = value }
+
+    val emailIsValid : Boolean
+        get() = android.util.Patterns.EMAIL_ADDRESS.matcher(emailValue).matches()
+
+    val passwordIsValid : Boolean
+        get() = senhaValue.isNotEmpty()
+
+    val validFields
+        get() = emailIsValid && passwordIsValid
+
+}
+
+
 @Composable
-fun signInScreen() {
-    var email by remember { mutableStateOf("") }
-    var senha by remember { mutableStateOf("") }
+fun signInScreen(
+    auth : FirebaseAuth
+) {
+    var email = remember { mutableStateOf("") }
+    var senha = remember { mutableStateOf("") }
+    var loginError = remember { mutableStateOf(false) }
+    val FieldController = remember { LoginTextFieldController(email, senha) }
+
     val context = LocalContext.current
 
     Box(
@@ -99,8 +135,8 @@ fun signInScreen() {
                 )
             }
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = email.value,
+                onValueChange = { email.value = it },
                 label = { Text("Digite seu E-mail") },
                 placeholder = { Text("E-mail") },
                 singleLine = true,
@@ -128,8 +164,8 @@ fun signInScreen() {
             }
 
             OutlinedTextField(
-                value = senha,
-                onValueChange = { senha = it },
+                value = senha.value,
+                onValueChange = { senha.value = it },
                 label = { Text("Digite sua senha") },
                 placeholder = { Text("Senha") },
                 singleLine = true,
@@ -144,45 +180,21 @@ fun signInScreen() {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Botão Entrar
-            Button(
-                onClick = { /* TODO: Fazer login */ },
-                shape = MaterialTheme.shapes.small,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF37395C), // Azul forte
-                    contentColor = Color.LightGray          // Cor do texto
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Text("Entrar")
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Botão Criar Conta
-            OutlinedButton(
-                onClick = {
-                    val intent = Intent(context, SignUpActivity::class.java)
-                    context.startActivity(intent) },
-                shape = MaterialTheme.shapes.small,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color.DarkGray
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Text("Criar Conta")
-            }
+            LoginButton(
+                auth = auth,
+                email = email,
+                senha = senha,
+                loginError = loginError,
+                fieldController = FieldController
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // Botão Esqueci a senha
             OutlinedButton(
                 onClick = {
-                    val intent = Intent(context, SignUpActivity::class.java)
-                    context.startActivity(intent) },
+
+                     },
                 shape = MaterialTheme.shapes.small,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = Color.DarkGray
@@ -195,4 +207,49 @@ fun signInScreen() {
             }
         }
     }
+}
+
+@Composable
+fun LoginButton(
+    auth : FirebaseAuth,
+    email : MutableState<String>,
+    senha : MutableState<String>,
+    loginError : MutableState<Boolean>,
+    fieldController : LoginTextFieldController
+){
+
+    val context = LocalContext.current
+
+    Button(
+        onClick = {
+            auth.signInWithEmailAndPassword(email.value, senha.value)
+                .addOnCompleteListener { task ->
+                    if(task.isSuccessful){
+                        Log.d("SignInActivity", "User logged in successfully")
+
+                        val intent = Intent(context, MainActivity::class.java)
+                        context.startActivity(intent)
+
+                    }
+                    else{
+                        Log.w("SignInActivity", "User log in failed. Exception = ${task.exception?.message}")
+
+                        loginError.value = true
+                    }
+                }
+        },
+        shape = MaterialTheme.shapes.small,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF37395C), // Azul forte
+            contentColor = Color.LightGray          // Cor do texto
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        enabled = fieldController.validFields
+    ) {
+        Text("Entrar")
+    }
+
+
 }
