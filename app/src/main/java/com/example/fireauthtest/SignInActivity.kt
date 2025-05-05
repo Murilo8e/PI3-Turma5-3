@@ -37,6 +37,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -121,10 +123,24 @@ fun signInScreen(
                 modifier = Modifier.size(200.dp)
             )
             Spacer(modifier = Modifier.height(30.dp))
+
+            if(loginError.value){
+                Text(
+                    text = "Usuário e/ou Senha inválido(s)!",
+                    textAlign = TextAlign.Start,
+                    style = TextStyle(
+                        color = Color.Red,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+            }
+
             // Campo de Email
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
+
                 Text(
                     text = "E-mail",
                     textAlign = TextAlign.Start,
@@ -144,7 +160,8 @@ fun signInScreen(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
-                )
+                ),
+                isError = loginError.value
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -174,7 +191,8 @@ fun signInScreen(
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
-                )
+                ),
+                isError = loginError.value
             )
 
             Spacer(modifier = Modifier.height(16.dp))
