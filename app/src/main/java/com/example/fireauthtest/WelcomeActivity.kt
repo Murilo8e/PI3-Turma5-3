@@ -7,8 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -20,28 +21,54 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.fireauthtest.ui.theme.FireAuthTestTheme
+import kotlinx.coroutines.delay
 
 class WelcomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            FireAuthTestTheme {
-                welcomeScreen()
-            }
+            WelcomeScreen()
         }
     }
 }
 
+@Preview
 @Composable
-@Preview(showBackground = true)
-fun welcomeScreen() {
+fun WelcomeScreen() {
+    var showSplashScreen by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(3000)
+        showSplashScreen = false
+    }
+
+    if (showSplashScreen) {
+        SplashScreen()
+    } else {
+        MainContent()
+    }
+}
+
+@Composable
+fun SplashScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0, 61, 177)),
+        contentAlignment = Alignment.Center
+    ) {
+        // Use o recurso correto aqui (coloque sua logo no drawable)
+        Text("SuperID", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun MainContent() {
     val context = LocalContext.current
 
-    // Gradiente de branco para azul claro (diagonal)7
     val gradientBrush = Brush.linearGradient(
-        colors = listOf(Color.White, Color(0xFFB3E5FC))
+        colors = listOf(Color.White, Color(0xFF81D4FA)) // Azul claro mais forte
     )
 
     Box(
@@ -82,25 +109,24 @@ fun welcomeScreen() {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Button(
+                ElevatedButton(
                     onClick = {
                         val intent = Intent(context, SignInActivity::class.java)
                         context.startActivity(intent)
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF0D47A1)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Text("Entrar")
                 }
 
-                OutlinedButton(
+                ElevatedButton(
                     onClick = {
                         val intent = Intent(context, SignUpActivity::class.java)
                         context.startActivity(intent)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Text("Criar Conta")
                 }
