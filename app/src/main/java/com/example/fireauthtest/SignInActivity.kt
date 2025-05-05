@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -237,9 +238,13 @@ fun LoginButton(
 ){
 
     val context = LocalContext.current
+    var showProgressIndicator by remember { mutableStateOf(false) }
 
     Button(
         onClick = {
+
+            showProgressIndicator = true
+
             auth.signInWithEmailAndPassword(email.value, senha.value)
                 .addOnCompleteListener { task ->
                     if(task.isSuccessful){
@@ -253,6 +258,7 @@ fun LoginButton(
                         Log.w("SignInActivity", "User log in failed. Exception = ${task.exception?.message}")
 
                         loginError.value = true
+                        showProgressIndicator = false
                     }
                 }
         },
@@ -266,7 +272,15 @@ fun LoginButton(
             .height(48.dp),
         enabled = fieldController.validFields
     ) {
-        Text("Entrar")
+        if(showProgressIndicator){
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = Color.White
+            )
+        }
+        else{
+            Text("Entrar")
+        }
     }
 
 
