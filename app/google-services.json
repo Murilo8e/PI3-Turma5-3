@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "769511301124",
-    "project_id": "fir-authtest-7dfda",
-    "storage_bucket": "fir-authtest-7dfda.firebasestorage.app"
+    "project_number": "292795199299",
+    "project_id": "superid-cf6b6",
+    "storage_bucket": "superid-cf6b6.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:769511301124:android:d6511d25ae3cbbe98cd551",
+        "mobilesdk_app_id": "1:292795199299:android:029c194df3497a4bcd09f6",
         "android_client_info": {
           "package_name": "com.example.fireauthtest"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAIruSQPUoZvaaRQuuKyMzPNJwmFvxek2w"
+          "current_key": "AIzaSyDMO3_URZ6bX0l3FmEEJs3sTudhRi4tQk4"
         }
       ],
       "services": {
