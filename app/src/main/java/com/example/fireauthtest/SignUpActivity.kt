@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Password
 import androidx.compose.material.icons.rounded.Person
@@ -68,6 +69,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -94,10 +96,6 @@ DEPOIS ALTERAR PARA O FIREBASE DO PROJETO!
 
 TO DO
     - Adicionar uma seta ao topo para retornar ao WelcomeScreen
-    - Criar warning dialogs
-        - Usuario Criado
-        - Email ja em uso (collision)
-        - Falha ao criar usuario
     - Encapsular a função de criar usuario (talvez?)
     - Adicionar tema/elementos de UI do app
 */
@@ -250,6 +248,8 @@ fun SignUpScreen(
     var termsOfUseIsChecked by remember { mutableStateOf(false) }
     var showTermsOfUseDialog by remember { mutableStateOf(false) }
     var showAccountCreatedDialog = remember { mutableStateOf(false) }
+    var showAccountCollisionDialog = remember { mutableStateOf(false) }
+    var showAccountCreationFailedDialog = remember { mutableStateOf(false) }
 
 
     val allFieldsNotEmpty : Boolean = listOf(
@@ -469,6 +469,22 @@ fun SignUpScreen(
             }
         }
 
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        CreateAccountButton(
+            enabledButton = enabledButton,
+            showAccountCreatedDialog = showAccountCreatedDialog,
+            showAccountCollisionDialog = showAccountCollisionDialog,
+            showAccountCreationFailedDialog = showAccountCreationFailedDialog,
+            auth = auth,
+            db = db,
+            firstName = firstNameInput,
+            surname = surnameInput,
+            email = emailInput,
+            password = firstPasswordInput
+        )
+
         if(showTermsOfUseDialog){
             TermsOfUseDialog(
                 onDissmissRequest = { showTermsOfUseDialog = false }
@@ -481,18 +497,18 @@ fun SignUpScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(30.dp))
+        if(showAccountCollisionDialog.value){
+            AccountCollisionDialog(
+                onDissmissRequest = { showAccountCollisionDialog.value = false }
+            )
+        }
 
-        CreateAccountButton(
-            enabledButton = enabledButton,
-            showAccountCreatedDialog = showAccountCreatedDialog,
-            auth = auth,
-            db = db,
-            firstName = firstNameInput,
-            surname = surnameInput,
-            email = emailInput,
-            password = firstPasswordInput
-        )
+        if(showAccountCreationFailedDialog.value){
+            AccountCreationFailedDialog(
+                onDissmissRequest = { showAccountCreationFailedDialog.value = false }
+            )
+        }
+
     }
 }
 
@@ -943,6 +959,8 @@ fun TermsOfUseDialog(
 fun CreateAccountButton(
     enabledButton : Boolean,
     showAccountCreatedDialog : MutableState<Boolean>,
+    showAccountCollisionDialog : MutableState<Boolean>,
+    showAccountCreationFailedDialog : MutableState<Boolean>,
     auth : FirebaseAuth,
     db : FirebaseFirestore,
     firstName : String,
@@ -991,7 +1009,12 @@ fun CreateAccountButton(
                     else {
                         Log.w("SignUpActivity", "Criação de usúario falhou. Exception = ${task.exception?.message}")
                         if(task.exception is FirebaseAuthUserCollisionException){
-                            TODO() // Exibir Alert Dialog de Colission
+                            showAccountCollisionDialog.value = true
+                            showProgressIndicator = false
+                        }
+                        else{
+                            showAccountCreationFailedDialog.value = true
+                            showProgressIndicator = false
                         }
                     }
                 }
@@ -1063,11 +1086,120 @@ fun AccountCreatedDialog(
 }
 
 @Composable
-fun AccountCollisionDialog(){
+fun AccountCollisionDialog(
+    onDissmissRequest: () -> Unit
+){
 
+    val context = LocalContext.current
+
+    Dialog(
+        onDismissRequest = { onDissmissRequest() }
+    ) {
+
+        Box(
+            modifier = Modifier
+                .background(Color.White, RoundedCornerShape(16.dp))
+                .size(275.dp)
+                .padding(26.dp)
+        ){
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ){
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Ícone de Alerta",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .size(60.dp)
+                )
+
+                Text(
+                    text = "Essa conta de email já está em uso!",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ){
+                    Button(
+                        onClick = {
+                            val intent = Intent(context, SignInActivity::class.java)
+                            context.startActivity(intent)
+                        },
+                    ) {
+                        Text("Fazer Login")
+                    }
+                    Button(
+                        onClick = onDissmissRequest
+                    ) {
+                        Text("Voltar")
+                    }
+                }
+            }
+        }
+    }
 }
 
+@Composable
+fun AccountCreationFailedDialog(
+    onDissmissRequest: () -> Unit
+){
+    Dialog(
+        onDismissRequest = { onDissmissRequest() }
+    ) {
 
+        Box(
+            modifier = Modifier
+                .background(Color.White, RoundedCornerShape(16.dp))
+                .size(275.dp)
+                .padding(26.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.error_icon),
+                    contentDescription = "Ícone de Erro",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .size(60.dp)
+                )
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ){
+                    Text(
+                        text = "Não foi possível criar a conta",
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                    )
+                    Text(
+                        text = "Tente novamente mais tarde"
+                    )
+                }
+
+                Button(
+                    onClick = onDissmissRequest
+                ) {
+                    Text("Fechar")
+                }
+            }
+        }
+    }
+}
 
 /*
 Funções de validação de entrada dos campos de texto
